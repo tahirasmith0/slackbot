@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node backend/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "vite"
+    "dev": "vite",
+    "build": "cd front end && vite build",
+    "serve": "vite preview"
   },
   "repository": {
     "type": "git",
