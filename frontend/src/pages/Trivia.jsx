@@ -1,6 +1,7 @@
 // Trivia.jsx
 import React, { useEffect, useState } from "react";
 import "./Trivia.css";
+import { triviaQuestions } from '../data/triviaData';
 
 const Trivia = () => {
   const [trivia, setTrivia] = useState(null);
@@ -10,10 +11,7 @@ const Trivia = () => {
 
   useEffect(() => {
     // Fetch trivia question from the API
-    fetch("http://localhost:3000/api/trivia")
-      .then((response) => response.json())
-      .then((data) => setTrivia(data))
-      .catch((error) => console.error("Error fetching trivia:", error));
+    setTrivia(triviaQuestions);
   }, []);
 
   const handleAnswerSelect = (answer) => {

@@ -1,121 +1,98 @@
-import React, { useState } from 'react';
-import './LeetCode.css';
+import React, { useState } from "react";
+import axios from "axios";
 
 const LeetCode = () => {
-  const [code, setCode] = useState('');
-  const [feedback, setFeedback] = useState('');
-  const [testResults, setTestResults] = useState([]);
-  const [isTestPassed, setIsTestPassed] = useState(false);
+  const [code, setCode] = useState("");
+  const [language, setLanguage] = useState("python");
+  const [output, setOutput] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const testCases = [
-    { input: 3, expectedOutput: ['1', '2', 'Fizz'] },
-    { input: 5, expectedOutput: ['1', '2', 'Fizz', '4', 'Buzz'] },
-    // More test cases can be added here
-  ];
-
-  const handleCodeChange = (e) => {
-    setCode(e.target.value);
+  const handleCodeChange = (event) => {
+    setCode(event.target.value);
   };
 
-  const runTests = () => {
-    let allTestsPassed = true;
-    const results = testCases.map((testCase, index) => {
-      const userOutput = runUserCode(testCase.input);
-      const isTestPassed = JSON.stringify(userOutput) === JSON.stringify(testCase.expectedOutput);
-      if (!isTestPassed) allTestsPassed = false;
-
-      return {
-        test: `Test ${index + 1}`,
-        input: testCase.input,
-        expectedOutput: testCase.expectedOutput,
-        userOutput: userOutput,
-        passed: isTestPassed,
-      };
-    });
-
-    setTestResults(results);
-    setIsTestPassed(allTestsPassed);
+  const handleLanguageChange = (event) => {
+    setLanguage(event.target.value);
   };
 
-  const runUserCode = (input) => {
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setErrorMessage("");
+
     try {
-      // Dynamically evaluating the user's code
-      // This is an unsafe method and should only be used in a controlled environment
-      const func = new Function('n', code);
-      return func(input);
-    } catch (error) {
-      setFeedback('Error in your code. Please check the syntax.');
-      return [];
-    }
-  };
+      const response = await axios.post("http://localhost:3001/run", {
+        code: code,
+        language: language,
+      });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (isTestPassed) {
-      setFeedback('All tests passed! Solution submitted.');
-    } else {
-      setFeedback('Some tests failed. Keep trying!');
+      const { stdout, stderr, compile_output, message } = response.data;
+
+      if (stderr || compile_output) {
+        setOutput(stderr || compile_output);
+      } else if (stdout) {
+        setOutput(stdout);
+      } else {
+        setOutput(message || "Something went wrong!");
+      }
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Failed to run code");
     }
+
+    setIsSubmitting(false);
   };
 
   return (
     <div className="leetcode">
-      <h2>LeetCode Problem: FizzBuzz</h2>
-      <h3>
-        Given an integer n, return a string array answer (1-indexed) where:
-        <ul>
-          <li>answer[i] == "FizzBuzz" if i is divisible by 3 and 5.</li>
-          <li>answer[i] == "Fizz" if i is divisible by 3.</li>
-          <li>answer[i] == "Buzz" if i is divisible by 5.</li>
-          <li>answer[i] == i (as a string) if none of the above conditions are true.</li>
-        </ul>
-      </h3>
+      <h2>LeetCode Problem</h2>
+      <div className="language-selector">
+        <label>Choose Language: </label>
+        <select value={language} onChange={handleLanguageChange}>
+          <option value="python">Python</option>
+          <option value="javascript">JavaScript</option>
+          <option value="cpp">C++</option>
+        </select>
+      </div>
 
-      <h4>Example:</h4>
-      <p>Input: n = 5</p>
-      <p>Output: ["1", "2", "Fizz", "4", "Buzz"]</p>
+      <h3>FizzBuzz Problem</h3>
+      <pre>{`Given an integer n, return a string array answer (1-indexed) where:
 
-      <form onSubmit={handleSubmit} className="leetcode-form">
-        <label htmlFor="code">Your Code (JavaScript):</label>
-        <textarea
-          id="code"
-          value={code}
-          onChange={handleCodeChange}
-          placeholder="Write your solution here..."
-          rows="6"
-          className="code-box"
-        />
+answer[i] == "FizzBuzz" if i is divisible by 3 and 5.
+answer[i] == "Fizz" if i is divisible by 3.
+answer[i] == "Buzz" if i is divisible by 5.
+answer[i] == i (as a string) if none of the above conditions are true.
 
-        <button type="button" onClick={runTests} className="test-button">
-          Test Your Code
-        </button>
+Example 1:
 
-        <button type="submit" className="submit-button" disabled={!isTestPassed}>
-          Submit Solution
-        </button>
-      </form>
+Input: n = 3
+Output: ["1", "2", "Fizz"]
 
-      {feedback && <p className="feedback">{feedback}</p>}
+Example 2:
 
-      <div className="test-results">
-        {testResults.length > 0 && (
-          <div>
-            <h4>Test Results:</h4>
-            <ul>
-              {testResults.map((result, index) => (
-                <li key={index} className={result.passed ? 'passed' : 'failed'}>
-                  <strong>{result.test}</strong>: <br />
-                  Input: {result.input} <br />
-                  Expected: {JSON.stringify(result.expectedOutput)} <br />
-                  Your Output: {JSON.stringify(result.userOutput)} <br />
-                  <span className={result.passed ? 'passed' : 'failed'}>
-                    {result.passed ? 'Passed' : 'Failed'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+Input: n = 5
+Output: ["1", "2", "Fizz", "4", "Buzz"]`}</pre>
+
+      <textarea
+        value={code}
+        onChange={handleCodeChange}
+        placeholder="Write your solution here..."
+        rows="10"
+        cols="50"
+      ></textarea>
+
+      <button
+        onClick={handleSubmit}
+        disabled={isSubmitting}
+        className="submit-button"
+      >
+        {isSubmitting ? "Running..." : "Submit"}
+      </button>
+
+      <div className="output">
+        {errorMessage && <p className="error">{errorMessage}</p>}
+        <h3>Output:</h3>
+        <pre>{output}</pre>
       </div>
     </div>
   );
